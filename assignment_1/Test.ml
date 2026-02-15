@@ -274,21 +274,84 @@ let test_five_threads () =
   else
     Printf.printf "  ✗ FAILED: counter = %d (expected %d)\n%!" final expected
 
-    (*
+    
 
 (* Test 5: Stress test - multiple increments per critical section *)
 let test_stress () =
-  failwith "Not implemented"
+  Printf.printf "Concurrent Test 5: Stress test...\n%!";
+  let tree = TreeLock.create 4 in
+  let arr_len = 100 in
+  let arr = Array.make arr_len 0 in
+  let iterations = 100000 in
+
+  let worker thread_id =
+    for _ = 1 to iterations do
+      TreeLock.lock tree thread_id;
+      (* Critical section *)
+      for i = 0 to arr_len - 1 do
+          arr.(i) <- arr.(i) + 1
+      done;
+      Domain.cpu_relax (); (* Introduce some delay to test race conditions *)
+      TreeLock.unlock tree thread_id
+    done
+  in
+   (*TreeLock.print_tree_info tree;*)
+
+  let d1 = Domain.spawn (fun () -> worker 0) in
+  let d2 = Domain.spawn (fun () -> worker 1) in
+  let d3 = Domain.spawn (fun () -> worker 2) in
+  let d4 = Domain.spawn (fun () -> worker 3) in
+
+  Domain.join d1;
+  Domain.join d2;
+  Domain.join d3;
+  Domain.join d4;
+  
+  let flag = ref 0 in 
+  for i = 0 to arr_len - 1 do
+    if arr.(i) <> 4*iterations then
+      flag := 1
+  done;
+  if !flag = 0 then
+    Printf.printf "  ✓ Passed\n%!"
+  else
+    Printf.printf "  ✗ FAILED\n%!"
+
 
 (* Test 6: Tree structure verification *)
 let test_structure_verification () =
-  failwith "Not implemented"
+  Printf.printf "Concurrent Test 6: Tree structure verification...\n%!";
+  check_tree 1 0 0;
+  check_tree 2 1 1;
+  check_tree 3 2 3;
+  check_tree 4 2 3;
+  check_tree 5 3 7;
+  check_tree 8 3 7;
+  check_tree 16 4 15;
+  check_tree 18 5 31
 
 (* Test 7: Performance benchmark *)
 let test_performance () =
-  failwith "Not implemented"
+  Printf.printf "Concurrent Test 7: Performance Benchmark...\n%!";
 
-  *)
+  let measure_time name test_func =
+    Printf.printf "\n  --- Benchmarking %s ---\n%!" name;
+    let start_time = Unix.gettimeofday () in
+    
+    test_func (); 
+    
+    let end_time = Unix.gettimeofday () in
+    let duration = end_time -. start_time in
+    Printf.printf "  %s Total Time: %.4f seconds\n%!" name duration
+  in
+
+  (* Run benchmarks on your existing test functions *)
+  measure_time "2 Threads" test_two_threads;
+  measure_time "4 Threads" test_four_threads;
+  measure_time "5 Threads" test_five_threads; 
+  measure_time "8 Threads" test_eight_threads
+
+  
 
 
   
@@ -330,17 +393,15 @@ let () =
   Printf.printf "PART 3: CONCURRENT CORRECTNESS\n%!";
   Printf.printf "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n%!";
   test_two_threads ();
-
-  
   test_four_threads ();
   test_eight_threads ();
   test_five_threads ();
-  (* 
+  
   test_stress ();
   test_structure_verification ();
   test_performance ();
 
-  *)
+  
 
   Printf.printf "\n=== Test Suite Complete ===\n%!"
 
