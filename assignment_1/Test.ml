@@ -8,35 +8,103 @@
 
 (* Test calculate_depth produces correct tree depth *)
 
-(*  
+let check_tree n expected_depth expected_nodes =
+  let tree = TreeLock.create n in
+  let actual_depth = TreeLock.get_depth tree in
+  let actual_nodes = TreeLock.get_num_nodes tree in
+  
+  if actual_depth = expected_depth && actual_nodes = expected_nodes then
+    Printf.printf "  ✓ Passed for %d threads: Expected: Depth=%d, Nodes=%d  Actual:   Depth=%d, Nodes=%d\n%!" n expected_depth expected_nodes actual_depth actual_nodes
+  else
+    Printf.printf "  ✗ FAILED for %d threads: Expected: Depth=%d, Nodes=%d  Actual:   Depth=%d, Nodes=%d\n%!" n expected_depth expected_nodes actual_depth actual_nodes
+
 
 let test_calculate_depth () =
   Printf.printf "Unit Test 1: Tree depth calculation...\n%!";
-  failwith "Not implemented"
+  let check_depth n expected =
+      let tree = TreeLock.create n in
+      let d = TreeLock.get_depth tree in
+      if d = expected then
+        Printf.printf "  ✓ Depth for %d threads = %d (expected %d)\n%!" n d expected
+      else
+        Printf.printf "  ✗ FAILED: Depth for %d threads = %d (expected %d)\n%!" n d expected
+  in
+
+  check_depth 1 0; 
+  check_depth 2 1; 
+  check_depth 3 2; 
+  check_depth 4 2; 
+  check_depth 5 3; 
+  check_depth 8 3;
+  check_depth 16 4;
+  check_depth 18 5
+
 
 (* Test tree structure properties *)
 let test_tree_structure () =
   Printf.printf "Unit Test 2: Tree structure properties...\n%!";
-  failwith "Not implemented"
+  check_tree 1 0 0;
+  check_tree 2 1 1;
+  check_tree 3 2 3;
+  check_tree 4 2 3;
+  check_tree 5 3 7;
+  check_tree 8 3 7;
+  check_tree 16 4 15;
+  check_tree 18 5 31
 
 (* Test boundary conditions *)
 let test_boundary_conditions () =
   Printf.printf "Unit Test 3: Boundary conditions...\n%!";
-  failwith "Not implemented"
+  Printf.printf "Negative treads condition...\n%!";
+  begin
+    try
+      let _ = TreeLock.create (-2) in
+      Printf.printf "  ✗ FAILED: create -2 should fail but succeeded\n%!" 
+    with 
+    | Invalid_argument msg -> 
+        Printf.printf "  ✓ Passed: create -2 raised Invalid_argument (\"%s\")\n%!" msg 
+  end;
+
+  Printf.printf "Single threads condition...\n%!";
+  check_tree 1 0 0 ;
+  Printf.printf "Power of 2 threads condition...\n%!";
+  check_tree 2 1 1 ;
+  check_tree 4 2 3 
 
 (** PART 2: SEQUENTIAL CORRECTNESS TESTS **)
 
 (* Test single thread can lock/unlock *)
 let test_single_thread () =
   Printf.printf "Sequential Test 1: Single thread lock/unlock...\n%!";
-  failwith "Not implemented"
+  let tree = TreeLock.create 6 in
+  TreeLock.lock tree 0;
+  Printf.printf "  ✓ Locked\n%!";
+  TreeLock.unlock tree 0;
+  Printf.printf "  ✓ Unlocked\n%!"
+  
 
 (* Test multiple sequential acquisitions by different threads *)
 let test_sequential_acquisitions () =
   Printf.printf "Sequential Test 2: Sequential acquisitions by multiple threads...\n%!";
-  failwith "Not implemented"
+  let tree = TreeLock.create 4 in
+  TreeLock.lock tree 0;
+  Printf.printf "  ✓ Lock by thread 0\n%!";
+  TreeLock.unlock tree 0;
+  Printf.printf "  ✓ Unlock by thread 0\n%!";
+  TreeLock.lock tree 1;
+  Printf.printf "  ✓ Lock by thread 1\n%!";
+  TreeLock.unlock tree 1;
+  Printf.printf "  ✓ Unlock by thread 1\n%!";
+  TreeLock.lock tree 2;
+  Printf.printf "  ✓ Lock by thread 2\n%!";
+  TreeLock.unlock tree 2;
+  Printf.printf "  ✓ Unlock by thread 2\n%!";
+  TreeLock.lock tree 3;
+  Printf.printf "  ✓ Lock by thread 3\n%!";
+  TreeLock.unlock tree 3;
+  Printf.printf "  ✓ Unlock by thread 3\n%!"
 
-  *)
+
 
 (** PART 3: CONCURRENT CORRECTNESS TESTS **)
 
@@ -70,8 +138,6 @@ let test_two_threads () =
     Printf.printf "  ✓ Passed: counter = %d (expected %d)\n%!" final expected
   else
     Printf.printf "  ✗ FAILED: counter = %d (expected %d)\n%!" final expected
-
-
     
 (* Test 2: Four threads *)
 let test_four_threads () =
@@ -221,7 +287,7 @@ let () =
   TreeLock.print_tree_info (TreeLock.create 8);
   Printf.printf "\n%!";
 
-  (* 
+  
 
   (* Unit Tests *)
   Printf.printf "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n%!";
@@ -245,7 +311,6 @@ let () =
   test_sequential_acquisitions ();
   Printf.printf "\n%!";
 
-  *)
   
 
   (* Concurrent Tests *)

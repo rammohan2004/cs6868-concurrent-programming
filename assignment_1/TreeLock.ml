@@ -23,7 +23,10 @@ let calculate_depth n =
 (* Convert thread_id to binary path representation *)
 let thread_id_to_path thread_id depth =
   (* Returns array of 0s and 1s representing path from root to leaf *)
-  Array.init depth (fun i -> if (thread_id land (1 lsl (depth-1-i))) = 0 then 0 else 1)
+  Array.init depth (fun i -> 
+    let bit_mask = (1 lsl (depth-1-i) ) in
+    if (thread_id land bit_mask = 0) then 0 else 1
+  )
   (*failwith "Not implemented"*)
 
 (* Get index of node in array given path from root *)
