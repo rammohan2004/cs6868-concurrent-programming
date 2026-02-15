@@ -33,7 +33,7 @@ let path_to_index path level =
      Right child of i is 2*i + 2 *)
     let index = ref 0 in
     for i = 0 to level-1 do
-     index := !index * 2 + (path.(i)+1)
+     index := ((!index * 2 )+ (path.(i)+1))
     done;
     !index
 
@@ -47,18 +47,20 @@ let create num_threads =
   (*failwith "Not implemented"*)
 
 let lock tree thread_id =
-  let depth = calculate_depth ((Array.length tree)+1)  in
+  let depth = calculate_depth ((Array.length tree)+1) in
   let path = thread_id_to_path thread_id depth in
-  for i = 0 to depth-1 do
+  for i = depth-1 downto 0 do
     let index = path_to_index path i in
     PetersonNode.lock tree.(index) path.(i)
   done
+  
   (*failwith "Not implemented"*)
 
 let unlock tree thread_id =
-  let depth = calculate_depth ((Array.length tree)+1) in
+  
+  let depth = calculate_depth ((Array.length tree)+1)  in
   let path = thread_id_to_path thread_id depth in
-  for i = depth-1 to 0 do
+  for i = 0 to depth-1 do
     let index = path_to_index path i in
     PetersonNode.unlock tree.(index) path.(i)
   done
@@ -78,4 +80,4 @@ let get_num_nodes tree =
 let print_tree_info tree =
   let depth = get_depth tree in 
   let num_nodes = get_num_nodes tree in
-  Printf.printf "Depth : %d, Peterson Nodes %d " depth num_nodes
+  Printf.printf "Depth : %d, Peterson Nodes %d \n%!" depth num_nodes

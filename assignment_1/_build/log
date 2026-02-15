@@ -2,7 +2,7 @@
 # OCAMLPARAM: unset
 # Shared cache: enabled-except-user-rules
 # Shared cache location: /home/rammohan/.cache/dune/db
-# Workspace root: /home/rammohan/cs6868-concurrent-programming
+# Workspace root: /home/rammohan/cs6868-concurrent-programming/assignment_1
 # Auto-detected concurrency: 8
 # Dune context:
 #  { name = "default"
@@ -13,4 +13,4 @@
 #  ; build_dir = In_build_dir "default"
 #  ; instrument_with = []
 #  }
-$ /home/rammohan/.opam/5.4.0/bin/ocamlc.opt -config > /tmp/dune_297c30_output
+$ /home/rammohan/.opam/5.4.0/bin/ocamlc.opt -config > /tmp/dune_55bd5a_output

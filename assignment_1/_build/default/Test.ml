@@ -8,7 +8,7 @@
 
 (* Test calculate_depth produces correct tree depth *)
 
-(*
+(*  
 
 let test_calculate_depth () =
   Printf.printf "Unit Test 1: Tree depth calculation...\n%!";
@@ -45,7 +45,7 @@ let test_two_threads () =
   Printf.printf "Concurrent Test 1: Two threads...\n%!";
   let tree = TreeLock.create 2 in
   let counter = Atomic.make 0 in
-  let iterations = 1000000000 in
+  let iterations = 100000 in
 
   let worker thread_id =
     for _ = 1 to iterations do
@@ -72,18 +72,131 @@ let test_two_threads () =
     Printf.printf "  ✗ FAILED: counter = %d (expected %d)\n%!" final expected
 
 
-    (*
+    
 (* Test 2: Four threads *)
 let test_four_threads () =
-  failwith "Not implemented"
+  Printf.printf "Concurrent Test 2: Four threads...\n%!";
+  let tree = TreeLock.create 4 in
+  let counter = Atomic.make 0 in
+  let iterations = 100000 in
+
+  let worker thread_id =
+    for _ = 1 to iterations do
+      TreeLock.lock tree thread_id;
+      (* Critical section *)
+      let old_val = Atomic.get counter in
+      Domain.cpu_relax (); (* Introduce some delay to test race conditions *)
+      Atomic.set counter (old_val + 1);
+      TreeLock.unlock tree thread_id
+    done
+  in
+   (*TreeLock.print_tree_info tree;*)
+
+  let d1 = Domain.spawn (fun () -> worker 0) in
+  let d2 = Domain.spawn (fun () -> worker 1) in
+  let d3 = Domain.spawn (fun () -> worker 2) in
+  let d4 = Domain.spawn (fun () -> worker 3) in
+
+  Domain.join d1;
+  Domain.join d2;
+  Domain.join d3;
+  Domain.join d4;
+  
+
+  let final = Atomic.get counter in
+  let expected = 4 * iterations in
+  if final = expected then
+    Printf.printf "  ✓ Passed: counter = %d (expected %d)\n%!" final expected
+  else
+    Printf.printf "  ✗ FAILED: counter = %d (expected %d)\n%!" final expected
 
 (* Test 3: Eight threads *)
 let test_eight_threads () =
-  failwith "Not implemented"
+  Printf.printf "Concurrent Test 3: Eight threads...\n%!";
+  let tree = TreeLock.create 8 in
+  let counter = Atomic.make 0 in
+  let iterations = 100000 in
+
+  let worker thread_id =
+    for _ = 1 to iterations do
+      TreeLock.lock tree thread_id;
+      (* Critical section *)
+      let old_val = Atomic.get counter in
+      Domain.cpu_relax (); (* Introduce some delay to test race conditions *)
+      Atomic.set counter (old_val + 1);
+      TreeLock.unlock tree thread_id
+    done
+  in
+
+  (*TreeLock.print_tree_info tree;*)
+
+  let d1 = Domain.spawn (fun () -> worker 0) in
+  let d2 = Domain.spawn (fun () -> worker 1) in
+  let d3 = Domain.spawn (fun () -> worker 2) in
+  let d4 = Domain.spawn (fun () -> worker 3) in
+  let d5 = Domain.spawn (fun () -> worker 4) in
+  let d6 = Domain.spawn (fun () -> worker 5) in
+  let d7 = Domain.spawn (fun () -> worker 6) in
+  let d8 = Domain.spawn (fun () -> worker 7) in
+
+  Domain.join d1;
+  Domain.join d2;
+  Domain.join d3;
+  Domain.join d4;
+  Domain.join d5;
+  Domain.join d6;
+  Domain.join d7;
+  Domain.join d8;
+
+  let final = Atomic.get counter in
+  let expected = 8 * iterations in
+  if final = expected then
+    Printf.printf "  ✓ Passed: counter = %d (expected %d)\n%!" final expected
+  else
+    Printf.printf "  ✗ FAILED: counter = %d (expected %d)\n%!" final expected
+
+
 
 (* Test 4: Non-power-of-two threads (5 threads) *)
 let test_five_threads () =
-  failwith "Not implemented"
+  Printf.printf "Concurrent Test 4: Five threads...\n%!";
+  let tree = TreeLock.create 5 in
+  let counter = Atomic.make 0 in
+  let iterations = 100000 in
+  
+  let worker thread_id =
+    for _ = 1 to iterations do
+      TreeLock.lock tree thread_id;
+      (* Critical section *)
+      let old_val = Atomic.get counter in
+      Domain.cpu_relax (); (* Introduce some delay to test race conditions *)
+      Atomic.set counter (old_val + 1);
+      TreeLock.unlock tree thread_id
+    done
+  in
+
+   (*TreeLock.print_tree_info tree;*)
+
+  let d1 = Domain.spawn (fun () -> worker 0) in
+  let d2 = Domain.spawn (fun () -> worker 1) in
+  let d3 = Domain.spawn (fun () -> worker 2) in
+  let d4 = Domain.spawn (fun () -> worker 3) in
+  let d5 = Domain.spawn (fun () -> worker 4) in
+
+  Domain.join d1;
+  Domain.join d2;
+  Domain.join d3;
+  Domain.join d4;
+  Domain.join d5;
+
+  let final = Atomic.get counter in
+  let expected = 5 * iterations in
+  if final = expected then
+    Printf.printf "  ✓ Passed: counter = %d (expected %d)\n%!" final expected
+  else
+    Printf.printf "  ✗ FAILED: counter = %d (expected %d)\n%!" final expected
+
+    (*
 
 (* Test 5: Stress test - multiple increments per critical section *)
 let test_stress () =
@@ -97,8 +210,10 @@ let test_structure_verification () =
 let test_performance () =
   failwith "Not implemented"
 
-
   *)
+
+
+  
 (* Main test runner *)
 let () =
   Printf.printf "=== TreeLock Test Suite ===\n\n%!";
@@ -119,6 +234,8 @@ let () =
   test_boundary_conditions ();
   Printf.printf "\n%!";
 
+
+
   (* Sequential Tests *)
   Printf.printf "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n%!";
   Printf.printf "PART 2: SEQUENTIAL CORRECTNESS\n%!";
@@ -129,6 +246,7 @@ let () =
   Printf.printf "\n%!";
 
   *)
+  
 
   (* Concurrent Tests *)
   Printf.printf "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n%!";
@@ -136,16 +254,18 @@ let () =
   Printf.printf "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n%!";
   test_two_threads ();
 
-  (* 
+  
   test_four_threads ();
   test_eight_threads ();
   test_five_threads ();
+  (* 
   test_stress ();
   test_structure_verification ();
   test_performance ();
+
+  *)
 
   Printf.printf "\n=== Test Suite Complete ===\n%!"
 
 
 
-*)
