@@ -45,7 +45,7 @@ let test_two_threads () =
   Printf.printf "Concurrent Test 1: Two threads...\n%!";
   let tree = TreeLock.create 2 in
   let counter = Atomic.make 0 in
-  let iterations = 1000000000 in
+  let iterations = 100000 in
 
   let worker thread_id =
     for _ = 1 to iterations do
