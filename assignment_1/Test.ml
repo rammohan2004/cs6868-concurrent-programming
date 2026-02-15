@@ -14,9 +14,9 @@ let check_tree n expected_depth expected_nodes =
   let actual_nodes = TreeLock.get_num_nodes tree in
   
   if actual_depth = expected_depth && actual_nodes = expected_nodes then
-    Printf.printf "  ✓ Passed for %d threads: Expected: Depth=%d, Nodes=%d  Actual:   Depth=%d, Nodes=%d\n%!" n expected_depth expected_nodes actual_depth actual_nodes
+    Printf.printf "  ✓ Passed: For %d threads: Expected: Depth=%d, Nodes=%d  Actual:   Depth=%d, Nodes=%d\n%!" n expected_depth expected_nodes actual_depth actual_nodes
   else
-    Printf.printf "  ✗ FAILED for %d threads: Expected: Depth=%d, Nodes=%d  Actual:   Depth=%d, Nodes=%d\n%!" n expected_depth expected_nodes actual_depth actual_nodes
+    Printf.printf "  ✗ FAILED: For %d threads: Expected: Depth=%d, Nodes=%d  Actual:   Depth=%d, Nodes=%d\n%!" n expected_depth expected_nodes actual_depth actual_nodes
 
 
 let test_calculate_depth () =
@@ -25,7 +25,7 @@ let test_calculate_depth () =
       let tree = TreeLock.create n in
       let d = TreeLock.get_depth tree in
       if d = expected then
-        Printf.printf "  ✓ Depth for %d threads = %d (expected %d)\n%!" n d expected
+        Printf.printf "  ✓ Passed: Depth for %d threads = %d (expected %d)\n%!" n d expected
       else
         Printf.printf "  ✗ FAILED: Depth for %d threads = %d (expected %d)\n%!" n d expected
   in
@@ -77,6 +77,18 @@ let test_boundary_conditions () =
 let test_single_thread () =
   Printf.printf "Sequential Test 1: Single thread lock/unlock...\n%!";
   let tree = TreeLock.create 6 in
+  TreeLock.lock tree 0;
+  Printf.printf "  ✓ Locked\n%!";
+  TreeLock.unlock tree 0;
+  Printf.printf "  ✓ Unlocked\n%!";
+  TreeLock.lock tree 0;
+  Printf.printf "  ✓ Locked\n%!";
+  TreeLock.unlock tree 0;
+  Printf.printf "  ✓ Unlocked\n%!";
+  TreeLock.lock tree 0;
+  Printf.printf "  ✓ Locked\n%!";
+  TreeLock.unlock tree 0;
+  Printf.printf "  ✓ Unlocked\n%!";
   TreeLock.lock tree 0;
   Printf.printf "  ✓ Locked\n%!";
   TreeLock.unlock tree 0;
