@@ -76,7 +76,7 @@ let test_boundary_conditions () =
 (* Test single thread can lock/unlock *)
 let test_single_thread () =
   Printf.printf "Sequential Test 1: Single thread lock/unlock...\n%!";
-  let tree = TreeLock.create 6 in
+  let tree = TreeLock.create 1 in
   TreeLock.lock tree 0;
   Printf.printf "  ✓ Locked\n%!";
   TreeLock.unlock tree 0;
@@ -332,24 +332,109 @@ let test_structure_verification () =
 
 (* Test 7: Performance benchmark *)
 let test_performance () =
-  Printf.printf "Concurrent Test 7: Performance Benchmark...\n%!";
+  (* Test 7: Performance Benchmark (Simple Version) *)
+  Printf.printf "Concurrent Test 7: Performance Benchmark...\n\n%!";
+  let total_ops = 1_000_000 in
 
-  let measure_time name test_func =
-    Printf.printf "\n  --- Benchmarking %s ---\n%!" name;
-    let start_time = Unix.gettimeofday () in
-    
-    test_func (); 
-    
-    let end_time = Unix.gettimeofday () in
-    let duration = end_time -. start_time in
-    Printf.printf "  %s Total Time: %.4f seconds\n%!" name duration
+  (* --- Case 1: 1 Thread --- *)
+  let tree1 = TreeLock.create 1 in
+  let ops1 = total_ops in
+  
+  let t_start = Unix.gettimeofday () in
+  
+  (* Run directly on main thread *)
+  for _ = 1 to ops1 do
+    TreeLock.lock tree1 0;
+    TreeLock.unlock tree1 0
+  done;
+  
+  let t_end = Unix.gettimeofday () in
+  Printf.printf "Time taken for 1 Thread: %f seconds\n%!" (t_end -. t_start);
+
+
+  (* --- Case 2: 2 Threads --- *)
+  let tree2 = TreeLock.create 2 in
+  let ops2 = total_ops / 2 in (* Split work evenly *)
+  
+  let worker2 id =
+    for _ = 1 to ops2 do
+      TreeLock.lock tree2 id;
+      TreeLock.unlock tree2 id
+    done
   in
 
-  (* Run benchmarks on your existing test functions *)
-  measure_time "2 Threads" test_two_threads;
-  measure_time "4 Threads" test_four_threads;
-  measure_time "5 Threads" test_five_threads; 
-  measure_time "8 Threads" test_eight_threads
+  let t_start = Unix.gettimeofday () in
+  
+  let d1 = Domain.spawn (fun () -> worker2 0) in
+  let d2 = Domain.spawn (fun () -> worker2 1) in
+  
+  Domain.join d1;
+  Domain.join d2;
+  
+  let t_end = Unix.gettimeofday () in
+  Printf.printf "Time taken for 2 Threads: %f seconds\n%!" (t_end -. t_start);
+
+
+  (* --- Case 3: 4 Threads --- *)
+  let tree4 = TreeLock.create 4 in
+  let ops4 = total_ops / 4 in (* Split work evenly *)
+  
+  let worker4 id =
+    for _ = 1 to ops4 do
+      TreeLock.lock tree4 id;
+      TreeLock.unlock tree4 id
+    done
+  in
+
+  let t_start = Unix.gettimeofday () in
+  
+  let d1 = Domain.spawn (fun () -> worker4 0) in
+  let d2 = Domain.spawn (fun () -> worker4 1) in
+  let d3 = Domain.spawn (fun () -> worker4 2) in
+  let d4 = Domain.spawn (fun () -> worker4 3) in
+  
+  Domain.join d1;
+  Domain.join d2;
+  Domain.join d3;
+  Domain.join d4;
+  
+  let t_end = Unix.gettimeofday () in
+  Printf.printf "Time taken for 4 Threads: %f seconds\n%!" (t_end -. t_start);
+
+
+  (* --- Case 4: 8 Threads --- *)
+  let tree8 = TreeLock.create 8 in
+  let ops8 = total_ops / 8 in
+  
+  let worker8 id =
+    for _ = 1 to ops8 do
+      TreeLock.lock tree8 id;
+      TreeLock.unlock tree8 id
+    done
+  in
+
+  let t_start = Unix.gettimeofday () in
+  
+  let d1 = Domain.spawn (fun () -> worker8 0) in
+  let d2 = Domain.spawn (fun () -> worker8 1) in
+  let d3 = Domain.spawn (fun () -> worker8 2) in
+  let d4 = Domain.spawn (fun () -> worker8 3) in
+  let d5 = Domain.spawn (fun () -> worker8 4) in
+  let d6 = Domain.spawn (fun () -> worker8 5) in
+  let d7 = Domain.spawn (fun () -> worker8 6) in
+  let d8 = Domain.spawn (fun () -> worker8 7) in
+  
+  Domain.join d1;
+  Domain.join d2;
+  Domain.join d3;
+  Domain.join d4;
+  Domain.join d5;
+  Domain.join d6;
+  Domain.join d7;
+  Domain.join d8;
+  
+  let t_end = Unix.gettimeofday () in
+  Printf.printf "Time taken for 8 Threads: %f seconds\n%!" (t_end -. t_start)
 
   
 
