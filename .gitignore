@@ -29,3 +29,5 @@ autograder/*.txt
 .*.swo
 *.bak
 .DS_Store
+
+_build
