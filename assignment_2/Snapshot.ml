@@ -27,7 +27,7 @@ let scan _snapshot =
   let rec try_snapshot() = 
     let c1 = collect _snapshot in
     let c2 = collect _snapshot in
-    if c1 == c2 then c1
+    if c1 = c2 then c1
     else try_snapshot()
   in try_snapshot()
 
