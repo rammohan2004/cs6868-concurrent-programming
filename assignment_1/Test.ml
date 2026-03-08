@@ -332,17 +332,17 @@ let test_structure_verification () =
 
 (* Test 7: Performance benchmark *)
 let test_performance () =
-  (* Test 7: Performance Benchmark (Simple Version) *)
+
   Printf.printf "Concurrent Test 7: Performance Benchmark...\n\n%!";
   let total_ops = 1_000_000 in
 
-  (* --- Case 1: 1 Thread --- *)
+  (*  Case 1: 1 Thread *)
   let tree1 = TreeLock.create 1 in
   let ops1 = total_ops in
   
   let t_start = Unix.gettimeofday () in
   
-  (* Run directly on main thread *)
+
   for _ = 1 to ops1 do
     TreeLock.lock tree1 0;
     TreeLock.unlock tree1 0
@@ -352,9 +352,9 @@ let test_performance () =
   Printf.printf "Time taken for 1 Thread: %f seconds\n%!" (t_end -. t_start);
 
 
-  (* --- Case 2: 2 Threads --- *)
+  (* Case 2: 2 Threads *)
   let tree2 = TreeLock.create 2 in
-  let ops2 = total_ops / 2 in (* Split work evenly *)
+  let ops2 = total_ops / 2 in 
   
   let worker2 id =
     for _ = 1 to ops2 do
@@ -375,9 +375,9 @@ let test_performance () =
   Printf.printf "Time taken for 2 Threads: %f seconds\n%!" (t_end -. t_start);
 
 
-  (* --- Case 3: 4 Threads --- *)
+  (* Case 3: 4 Threads*)
   let tree4 = TreeLock.create 4 in
-  let ops4 = total_ops / 4 in (* Split work evenly *)
+  let ops4 = total_ops / 4 in 
   
   let worker4 id =
     for _ = 1 to ops4 do
@@ -402,7 +402,7 @@ let test_performance () =
   Printf.printf "Time taken for 4 Threads: %f seconds\n%!" (t_end -. t_start);
 
 
-  (* --- Case 4: 8 Threads --- *)
+  (* Case 4: 8 Threads*)
   let tree8 = TreeLock.create 8 in
   let ops8 = total_ops / 8 in
   
