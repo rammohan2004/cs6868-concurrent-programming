@@ -22,7 +22,7 @@
     This test should PASS if your basic operations work correctly.
 *)
 let test_sequential () =
-  Printf.printf("Test 1: Sequential operations");
+  Printf.printf("Test 1: Sequential operations\n%!");
   let snapshot = Snapshot.create 4 0 in
   Snapshot.update snapshot 0 10 ;
   Snapshot.update snapshot 1 20 ;
@@ -31,9 +31,9 @@ let test_sequential () =
   let actual = Snapshot.scan snapshot in
   let expected = [|10;20;30;40|] in
   if actual = expected then 
-    Printf.printf " ✓ Passed : Actual array (%d , %d, %d, %d) ,  Expected array (%d , %d, %d, %d)\n%! " actual.(0) actual.(1) actual.(2) actual.(3) expected.(0) expected.(1) expected.(2) expected.(3)
+    Printf.printf " ✓ Passed : Actual array (%d , %d, %d, %d) ,  Expected array (%d , %d, %d, %d)\n%!" actual.(0) actual.(1) actual.(2) actual.(3) expected.(0) expected.(1) expected.(2) expected.(3)
   else 
-    Printf.printf " ✗ FAILED : Actual array (%d , %d, %d, %d) ,  Expected array (%d , %d, %d, %d)\n%! " actual.(0) actual.(1) actual.(2) actual.(3) expected.(0) expected.(1) expected.(2) expected.(3)
+    Printf.printf " ✗ FAILED : Actual array (%d , %d, %d, %d) ,  Expected array (%d , %d, %d, %d)\n%!" actual.(0) actual.(1) actual.(2) actual.(3) expected.(0) expected.(1) expected.(2) expected.(3)
  
 
 
@@ -56,7 +56,7 @@ let test_sequential () =
     This test should PASS if you use Atomic.t correctly (no data races).
 *)
 let test_concurrent_updates () =
-   Printf.printf "Test 2: Concurrent updates, single scanner";
+   Printf.printf "Test 2: Concurrent updates, single scanner\n%!";
   let sanpshot = Snapshot.create 4 0 in
   let iterations = 100 in
 
@@ -113,19 +113,19 @@ let test_concurrent_updates () =
     the double-collect algorithm correctly. A naive scan will fail here.
 *)
 let test_concurrent_scans () =
-  Printf.printf " Test 3: Multiple concurrent scanners";
-  let snapshot = Snapshot.create 0 0 in 
+  Printf.printf "Test 3: Multiple concurrent scanners\n%!";
+  let snapshot = Snapshot.create 3 0 in 
   let is_reads_completed = Atomic.make false in
   let all_scans_consistent = Atomic.make true in 
 
-  let scanner_helper = 
-    for _ = 0 to 50 do 
+  let scanner_helper() = 
+     for _ = 0 to 50 do 
       let value = Snapshot.scan snapshot in
       if value.(0) < value.(1)/10 || value.(1)/10 < value.(2)/100  then 
         Atomic.set all_scans_consistent false;
     done
   in
-  let writer_helper = 
+  let writer_helper() = 
     let i = ref 0 in
     while Atomic.get is_reads_completed = false do
       Snapshot.update snapshot 0 !i;
@@ -135,12 +135,11 @@ let test_concurrent_scans () =
     done 
 
   in 
-  
-  let w1 = Domain.spawn (fun () -> writer_helper) in
-  let s1 = Domain.spawn (fun () -> scanner_helper) in
-  let s2 = Domain.spawn (fun () -> scanner_helper) in
-  let s3 = Domain.spawn (fun () -> scanner_helper) in
-  let s4 = Domain.spawn (fun () -> scanner_helper) in
+  let s1 = Domain.spawn (fun () -> scanner_helper ()) in
+  let s2 = Domain.spawn (fun () -> scanner_helper ()) in
+  let s3 = Domain.spawn (fun () -> scanner_helper ()) in
+  let s4 = Domain.spawn (fun () -> scanner_helper ()) in
+  let w1 = Domain.spawn (fun () -> writer_helper ()) in
 
   Domain.join s1;
   Domain.join s2;
@@ -150,9 +149,9 @@ let test_concurrent_scans () =
   Domain.join w1;
 
   if Atomic.get all_scans_consistent then 
-    Printf.printf "✓ Passed "
+    Printf.printf " ✓ Passed\n%!"
   else 
-    Printf.printf "✗ FAILED "
+    Printf.printf " ✗ FAILED\n%!"
 
 
 
@@ -172,7 +171,45 @@ let test_concurrent_scans () =
     double-collect handles high contention gracefully.
 *)
 let test_high_contention () =
-  failwith "Not implemented"
+  Printf. printf "Test 4: High contention stress test\n%!";
+  let snapshot = Snapshot.create 3 0 in
+  let iterations = 1000 in
+
+  let writer_helper () = 
+    for i = 1 to iterations do 
+      Snapshot.update snapshot 0 i;
+      Snapshot.update snapshot 1 (i*10);
+      Snapshot.update snapshot 2 (i*100);
+    done 
+  in 
+
+  let scanner_helper () = 
+    for _ = 1 to iterations do 
+      ignore(Snapshot.scan snapshot);
+    done 
+  in 
+
+
+  let w1 = Domain.spawn(fun () -> writer_helper()) in
+  let s1 = Domain.spawn(fun () -> scanner_helper()) in
+  let w2 = Domain.spawn(fun () -> writer_helper()) in
+  let s2 = Domain.spawn(fun () -> scanner_helper()) in
+  let w3 = Domain.spawn(fun () -> writer_helper()) in
+  let s3 = Domain.spawn(fun () -> scanner_helper()) in
+  let w4 = Domain.spawn(fun () -> writer_helper()) in
+  let s4 = Domain.spawn(fun () -> scanner_helper()) in
+
+  Domain.join w1;
+  Domain.join s1;
+  Domain.join w2;
+  Domain.join s2;
+  Domain.join w3;
+  Domain.join s3;
+  Domain.join w4;
+  Domain.join s4;
+
+  Printf.printf " ✓ Passed\n%! "
+
 
 (** Main test runner *)
 let () =

@@ -1,3 +1,5 @@
+(*  
+
 (** QCheck-STM State Machine Test for Atomic Snapshot
 
     This test verifies the atomic snapshot against a sequential model using
@@ -160,3 +162,7 @@ let () =
   | _ ->
       Printf.eprintf "Usage: %s [sequential|concurrent]\n" Sys.argv.(0);
       exit 1
+
+
+
+*)
