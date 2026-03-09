@@ -190,23 +190,24 @@ let test_high_contention () =
   in 
 
 
-  let w1 = Domain.spawn(fun () -> writer_helper()) in
-  let s1 = Domain.spawn(fun () -> scanner_helper()) in
-  let w2 = Domain.spawn(fun () -> writer_helper()) in
-  let s2 = Domain.spawn(fun () -> scanner_helper()) in
-  let w3 = Domain.spawn(fun () -> writer_helper()) in
-  let s3 = Domain.spawn(fun () -> scanner_helper()) in
-  let w4 = Domain.spawn(fun () -> writer_helper()) in
-  let s4 = Domain.spawn(fun () -> scanner_helper()) in
+  let d1 = Domain.spawn(fun () -> scanner_helper()) in
+  let d2 = Domain.spawn(fun () -> writer_helper()) in
+  let d3 = Domain.spawn(fun () -> scanner_helper()) in
+  let d4 = Domain.spawn(fun () -> writer_helper()) in
+  let d5 = Domain.spawn(fun () -> scanner_helper()) in
+  let d6 = Domain.spawn(fun () -> writer_helper()) in
+  let d7 = Domain.spawn(fun () -> scanner_helper()) in
+  let d8 = Domain.spawn(fun () -> writer_helper()) in
+  
 
-  Domain.join w1;
-  Domain.join s1;
-  Domain.join w2;
-  Domain.join s2;
-  Domain.join w3;
-  Domain.join s3;
-  Domain.join w4;
-  Domain.join s4;
+  Domain.join d1;
+  Domain.join d2;
+  Domain.join d3;
+  Domain.join d4;
+  Domain.join d5;
+  Domain.join d6;
+  Domain.join d7;
+  Domain.join d8;
 
   Printf.printf " ✓ Passed\n%! "
 
