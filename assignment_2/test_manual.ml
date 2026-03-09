@@ -57,12 +57,12 @@ let test_sequential () =
 *)
 let test_concurrent_updates () =
    Printf.printf "Test 2: Concurrent updates, single scanner\n%!";
-  let sanpshot = Snapshot.create 4 0 in
+  let snapshot = Snapshot.create 4 0 in
   let iterations = 100 in
 
   let writer_helper id = 
     for i = 0 to iterations do
-      Snapshot.update sanpshot id (1000*id+i)
+      Snapshot.update snapshot id (1000*id+i)
     done
   in
 
@@ -70,7 +70,7 @@ let test_concurrent_updates () =
   let d2 = Domain.spawn(fun() -> writer_helper 1) in
   let d3 = Domain.spawn(fun() -> writer_helper 2) in
   let d4 = Domain.spawn(fun() -> writer_helper 3) in
-  let scanner = Domain.spawn(fun() -> Snapshot.scan sanpshot) in
+  let scanner = Domain.spawn(fun() -> Snapshot.scan snapshot) in
 
   Domain.join d1;
   Domain.join d2;
@@ -129,8 +129,8 @@ let test_concurrent_scans () =
     let i = ref 0 in
     while Atomic.get is_reads_completed = false do
       Snapshot.update snapshot 0 !i;
-      Snapshot.update snapshot 0 (!i*10);
-      Snapshot.update snapshot 0 (!i*100);
+      Snapshot.update snapshot 1 (!i*10);
+      Snapshot.update snapshot 2 (!i*100);
       i := !i+1;
     done 
 

@@ -30,4 +30,56 @@
     state that existed during the scan operation.
 *)
 
-failwith "Implement QCheck-Lin test following Lecture 3 examples"
+
+
+
+(** QCheck-Lin Linearizability Test for Lock-Based Bounded Queue
+
+    This test demonstrates that the lock-based bounded queue IS safe for
+    multiple writers and multiple readers (MWMR).
+
+    == Expected Result ==
+
+    This test should PASS, confirming that the bounded queue with a mutex
+    is linearizable. All concurrent executions should be reconcilable with
+    some sequential execution.
+
+    The mutex ensures that:
+    - Only one thread accesses the queue state at a time
+    - All operations appear atomic
+    - No race conditions on head/tail updates
+
+    Compare this with the lock-free queue test which fails!
+*)
+
+module SS = Snapshot
+
+(** Lin API specification for the Atomic Snapshot*)
+module SnapshotSig = struct
+  type t = int SS.t
+
+  (** Create a Snapshot with 4 registers for testing *)
+  let init () = SS.create 4 0
+
+  (** No cleanup needed *)
+  let cleanup _ = ()
+
+  open Lin
+
+  (* Randomly generating indexes between 0 and 3*)
+  let index = int_bound 3
+
+  (** API description using Lin's combinator DSL *)
+  let api =
+    [ val_ "update" SS.update (t @-> index @-> int @-> returning unit);
+      val_ "scan" SS.scan (t @-> returning (array int)); ]
+end
+
+(** Generate the linearizability test from the specification *)
+module SS_domain = Lin_domain.Make(SnapshotSig)
+
+(** Run 1000 test iterations - should all pass! *)
+let () =
+  QCheck_base_runner.run_tests_main [
+    SS_domain.lin_test ~count:1000 ~name:"Atomic Snapshot Linearizability";
+  ]

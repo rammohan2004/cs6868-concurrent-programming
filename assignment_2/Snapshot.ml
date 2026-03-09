@@ -14,7 +14,7 @@ let create _n _init_value =
   }
 
 let update _snapshot _idx _value = 
-  if _idx < 0 || _idx > _snapshot.n then invalid_arg "Index out of bound";
+  if _idx < 0 || _idx >= _snapshot.n then invalid_arg "Index out of bound";
   Atomic.set _snapshot.registers.(_idx) _value
 
 
