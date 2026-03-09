@@ -175,11 +175,12 @@ let test_high_contention () =
   let snapshot = Snapshot.create 3 0 in
   let iterations = 1000 in
 
-  let writer_helper () = 
-    for i = 1 to iterations do 
-      Snapshot.update snapshot 0 i;
-      Snapshot.update snapshot 1 (i*10);
-      Snapshot.update snapshot 2 (i*100);
+  let writer_helper id = 
+    let step = (id*3000) in 
+    for i = 0 to iterations-1 do 
+      Snapshot.update snapshot 0 (step + 3*i);
+      Snapshot.update snapshot 1 (step + 3*i + 1);
+      Snapshot.update snapshot 2 (step + 3*i + 2);
     done 
   in 
 
@@ -191,13 +192,13 @@ let test_high_contention () =
 
 
   let d1 = Domain.spawn(fun () -> scanner_helper()) in
-  let d2 = Domain.spawn(fun () -> writer_helper()) in
+  let d2 = Domain.spawn(fun () -> writer_helper 0) in
   let d3 = Domain.spawn(fun () -> scanner_helper()) in
-  let d4 = Domain.spawn(fun () -> writer_helper()) in
+  let d4 = Domain.spawn(fun () -> writer_helper 1) in
   let d5 = Domain.spawn(fun () -> scanner_helper()) in
-  let d6 = Domain.spawn(fun () -> writer_helper()) in
+  let d6 = Domain.spawn(fun () -> writer_helper 2) in
   let d7 = Domain.spawn(fun () -> scanner_helper()) in
-  let d8 = Domain.spawn(fun () -> writer_helper()) in
+  let d8 = Domain.spawn(fun () -> writer_helper 3) in
   
 
   Domain.join d1;
