@@ -1,5 +1,3 @@
-(*  
-
 (** QCheck-STM State Machine Test for Atomic Snapshot
 
     This test verifies the atomic snapshot against a sequential model using
@@ -70,7 +68,12 @@ let arb_cmd _state =
    - For Scan: the model state doesn't change (Scan is read-only)
    ============================================================================ *)
 let next_state cmd state =
-  failwith "TODO: Implement next_state"
+  match cmd with 
+  | Update (idx, value) -> 
+      let newState = Array.copy state in 
+      newState.(idx) <- value ;
+      newState
+  | Scan -> state
 
 (** Precondition - all commands are always valid for snapshot *)
 let precond _cmd _state = true
@@ -101,8 +104,13 @@ let run cmd snapshot =
 
    Return true if result is acceptable, false otherwise.
    ============================================================================ *)
-let postcond cmd state result =
-  failwith "TODO: Implement postcond"
+let postcond cmd (state : model_state) result =
+  match cmd, result with
+  | Update _, Res ((Unit, _), _) -> 
+      true
+  | Scan, Res ((Array Int, _), actual_array) -> 
+    actual_array = state
+  | _, _ -> false
 
 (** QCheck-STM specification *)
 module Spec = struct
@@ -162,7 +170,3 @@ let () =
   | _ ->
       Printf.eprintf "Usage: %s [sequential|concurrent]\n" Sys.argv.(0);
       exit 1
-
-
-
-*)
