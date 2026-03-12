@@ -2,7 +2,7 @@
 
 ## 1. What data races did TSAN detect with refs?
 
-To test for data races, I temporarily changed the snapshot implementation to use a standard OCaml array instead of the `Atomic.t` module. I then ran `test_manual.ml`. ThreadSanitizer (TSAN) caught **4 data races**.
+To test for data races, I temporarily changed the snapshot implementation to use ref array instead of the `Atomic.t`. I then ran `test_manual.ml`. ThreadSanitizer (TSAN) caught **4 data races**. All the 4 dataraces caught during the execution of high contention test.
 
 Here is what TSAN found:
 * **Race 1:** Thread T4 (a writer thread) was writing to `0x7fffe51fff38` at the same time Thread T1 (a scanner thread) was reading from it.
@@ -13,18 +13,10 @@ Here is what TSAN found:
 
 ## 2. Why does the atomic implementation avoid races?
 
-When I changed the code back to use `Atomic.t`, the data races disappeared. 
-
-This is because the `Atomic` module uses something called **memory fences** (also known as memory barriers) at the hardware level. 
-
-Normally, the computer's CPU and compiler might try to mix up or reorder reads and writes to make the program run faster, which causes threads to crash into each other. A memory fence acts exactly like a physical gate that stops this from happening. 
-
-
-
-* **For writing:** When a thread writes a new value using `Atomic.set`, the fence forces that write to completely finish before the gate opens for anyone else. 
-* **For reading:** When a scanner thread reads the value using `Atomic.get`, the fence makes sure it waits to read the newest, fully finished data.
-
-Because these fences force the reads and writes to wait their turn and happen strictly one after the other, a read and a write can never happen at the exact same split second. This completely prevents the data races TSAN detected earlier.
+`Atomic` inserts memory fences and disables unsafe compiler optimisations that break sequential consistency.
+Memory fence enforces an ordering constraint between the instructions before and after
+the fence. and also Flush write buffer and bring caches up to date.
+Because of this atomic implementation avoid data races.
 
 ## 3. TSAN Outputs
 
