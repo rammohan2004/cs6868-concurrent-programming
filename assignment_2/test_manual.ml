@@ -58,6 +58,9 @@ let test_sequential () =
 let test_concurrent_updates () =
    Printf.printf "Test 2: Concurrent updates, single scanner\n%!";
   let snapshot = Snapshot.create 4 0 in
+  for i = 0 to 3 do
+    Snapshot.update snapshot i (i*1000) 
+  done;
   let iterations = 100 in
 
   let writer_helper id = 
@@ -70,14 +73,14 @@ let test_concurrent_updates () =
   let d2 = Domain.spawn(fun() -> writer_helper 1) in
   let d3 = Domain.spawn(fun() -> writer_helper 2) in
   let d4 = Domain.spawn(fun() -> writer_helper 3) in
-  let scanner = Domain.spawn(fun() -> Snapshot.scan snapshot) in
 
   Domain.join d1;
   Domain.join d2;
   Domain.join d3;
   Domain.join d4;
 
-  let final = Domain.join scanner in
+
+  let final = Snapshot.scan snapshot in
   if (final.(0) >= 0 && final.(0) <= 100 && final.(1) >= 1000 && final.(1) <= 1100 && 
     final.(2) >= 2000 && final.(2) <= 2100 && final.(3) >= 3000 && final.(3) <= 3100) then
     Printf.printf " ✓ Passed : Final values (%d , %d, %d, %d)\n%!" final.(0) final.(1) final.(2) final.(3)

@@ -2,12 +2,14 @@
 (library
  (name snapshot)
  (modules Snapshot))
-
+(library
+ (name bonus)
+ (modules Bonus))
 ; Executable: manual concurrent tests
 (executable
  (name test_manual)
  (modules test_manual)
- (libraries snapshot))
+ (libraries snapshot bonus))
 
 ; Executable: QCheck-Lin linearizability test
 (executable
