@@ -31,3 +31,5 @@ autograder/*.txt
 .DS_Store
 
 _build
+
+TSAN_REPORT
