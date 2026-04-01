@@ -62,15 +62,17 @@ let notify _q =
   let freespace = free_space _q in
   let s = Queue.length _q.buffer in
 
-  if Queue.length _q.enq_waiters > 0 then
+  if Queue.length _q.enq_waiters > 0 then (
     let enq_head = Queue.peek _q.enq_waiters in
     if Array.length enq_head.items <= freespace then 
-      Condition.signal enq_head.cond;
+      Condition.signal enq_head.cond
+  );
 
-  if Queue.length _q.deq_waiters > 0 then
+  if Queue.length _q.deq_waiters > 0 then (
     let deq_head = Queue.peek _q.deq_waiters in
     if deq_head.amount <= s then
-      Condition.signal deq_head.cond;
+      Condition.signal deq_head.cond
+  )
 
 (** [enq q items] atomically enqueues all items. Algorithm:
     1. Validate and lock the mutex (use [Fun.protect] for safe unlock).
@@ -81,7 +83,32 @@ let notify _q =
        - Pop self from [enq_waiters].
     3. Push all items into [buffer].
     4. Call [notify]. *)
-let enq _q _items = failwith "Not implemented"
+let enq _q _items = 
+  let items_size = Array.length _items in
+  validate_enq_count _q items_size;
+  Mutex.lock _q.mutex;
+  Fun.protect ~finally:(fun () -> Mutex.unlock _q.mutex) (fun () ->
+    let freespace = free_space _q in
+
+    if(Queue.length _q.enq_waiters > 0 || freespace < items_size ) then (
+      let waiter = {items = _items; cond = Condition.create ()} in
+      Queue.add waiter _q.enq_waiters;
+
+      while (free_space _q < items_size || Queue.peek _q.enq_waiters != waiter) do
+        Condition.wait waiter.cond _q.mutex
+      done;
+
+      ignore (Queue.take _q.enq_waiters)
+    );
+
+    for i = 0 to items_size-1 do
+      Queue.add _items.(i) _q.buffer
+    done;
+
+
+    notify _q
+
+  )
 
 (** [deq q n] atomically dequeues [n] items. Symmetric to [enq]:
     wait on [deq_waiters] until at head AND enough items available. *)
