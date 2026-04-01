@@ -58,7 +58,19 @@ let free_space q = q.capacity - Queue.length q.buffer
 
 (** [notify q] checks the head of each waiter queue and signals it if
     its request can now be satisfied. Call after every enqueue or dequeue. *)
-let notify _q = failwith "Not implemented"
+let notify _q = 
+  let freespace = free_space _q in
+  let s = Queue.length _q.buffer in
+
+  if Queue.length _q.enq_waiters > 0 then
+    let enq_head = Queue.peek _q.enq_waiters in
+    if Array.length enq_head.items <= freespace then 
+      Condition.signal enq_head.cond;
+
+  if Queue.length _q.deq_waiters > 0 then
+    let deq_head = Queue.peek _q.deq_waiters in
+    if deq_head.amount <= s then
+      Condition.signal deq_head.cond;
 
 (** [enq q items] atomically enqueues all items. Algorithm:
     1. Validate and lock the mutex (use [Fun.protect] for safe unlock).
@@ -85,6 +97,6 @@ let try_enq _q _items = failwith "Not implemented"
     return [None] immediately (do not create a waiter). *)
 let try_deq _q _n = failwith "Not implemented"
 
-let size _q = failwith "Not implemented"
+let size _q = Queue.length _q.buffer
 
-let capacity _q = failwith "Not implemented"
+let capacity _q = _q.capacity
