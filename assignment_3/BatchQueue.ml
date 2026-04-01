@@ -30,7 +30,17 @@ type 'a t = {
 
 (** [create capacity] initializes a new queue. Validate capacity, then
     initialize all fields of the ['a t] record. *)
-let create _capacity = failwith "Not implemented"
+let create _capacity = 
+  if _capacity <= 0 then
+    invalid_arg "BatchQueue: capacity must be greater than 0";
+
+  {
+    mutex = Mutex.create ();
+    buffer = Queue.create ();
+    capacity = _capacity;
+    enq_waiters = Queue.create ();
+    deq_waiters = Queue.create ();
+  }
 
 let validate_enq_count q n =
   if n <= 0 then
