@@ -56,6 +56,10 @@ let validate_deq_count q n =
 
 let free_space q = q.capacity - Queue.length q.buffer
 
+let size _q = Queue.length _q.buffer
+
+let capacity _q = _q.capacity
+
 (** [notify q] checks the head of each waiter queue and signals it if
     its request can now be satisfied. Call after every enqueue or dequeue. *)
 let notify _q = 
@@ -112,7 +116,30 @@ let enq _q _items =
 
 (** [deq q n] atomically dequeues [n] items. Symmetric to [enq]:
     wait on [deq_waiters] until at head AND enough items available. *)
-let deq _q _n = failwith "Not implemented"
+let deq _q _n = 
+
+  validate_deq_count _q _n;
+  Mutex.lock _q.mutex;
+  Fun.protect ~finally:(fun () -> Mutex.unlock _q.mutex) (fun () ->
+
+    if(Queue.length _q.deq_waiters > 0 ||  size _q < _n) then (
+      let waiter = {amount = _n; cond = Condition.create ()} in
+      Queue.add waiter _q.deq_waiters;
+
+      while (size _q < _n || Queue.peek _q.deq_waiters != waiter) do
+        Condition.wait waiter.cond _q.mutex
+      done;
+
+      ignore (Queue.take _q.deq_waiters)
+    );
+
+    let result = Array.init _n (fun _ -> Queue.take _q.buffer) in
+
+    notify _q;
+
+    result
+
+  )
 
 (** [try_enq q items] non-blocking enqueue. If no enqueuers are waiting
     ahead AND enough free space, enqueue and return [true]. Otherwise
@@ -124,6 +151,3 @@ let try_enq _q _items = failwith "Not implemented"
     return [None] immediately (do not create a waiter). *)
 let try_deq _q _n = failwith "Not implemented"
 
-let size _q = Queue.length _q.buffer
-
-let capacity _q = _q.capacity
