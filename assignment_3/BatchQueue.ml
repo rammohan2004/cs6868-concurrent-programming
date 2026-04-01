@@ -144,7 +144,26 @@ let deq _q _n =
 (** [try_enq q items] non-blocking enqueue. If no enqueuers are waiting
     ahead AND enough free space, enqueue and return [true]. Otherwise
     return [false] immediately (do not create a waiter). *)
-let try_enq _q _items = failwith "Not implemented"
+let try_enq _q _items = 
+  let items_size = Array.length _items in
+  validate_enq_count _q items_size;
+  Mutex.lock _q.mutex;
+  Fun.protect ~finally:(fun () -> Mutex.unlock _q.mutex) (fun () ->
+
+    let freespace = free_space _q in
+
+    if (Queue.length _q.enq_waiters > 0 || freespace < items_size ) then 
+      false
+    else (
+
+    for i = 0 to items_size-1 do
+      Queue.add _items.(i) _q.buffer
+    done;
+
+    notify _q;
+    true
+    )
+  )
 
 (** [try_deq q n] non-blocking dequeue. If no dequeuers are waiting
     ahead AND enough items, dequeue and return [Some items]. Otherwise
