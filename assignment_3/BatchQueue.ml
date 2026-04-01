@@ -168,5 +168,21 @@ let try_enq _q _items =
 (** [try_deq q n] non-blocking dequeue. If no dequeuers are waiting
     ahead AND enough items, dequeue and return [Some items]. Otherwise
     return [None] immediately (do not create a waiter). *)
-let try_deq _q _n = failwith "Not implemented"
+let try_deq _q _n = 
+  
+  validate_deq_count _q _n;
+  Mutex.lock _q.mutex;
+  Fun.protect ~finally:(fun () -> Mutex.unlock _q.mutex) (fun () ->
+
+    if(Queue.length _q.deq_waiters > 0 ||  size _q < _n) then (
+      None 
+    ) else (
+
+    let result = Array.init _n (fun _ ->Queue.take _q.buffer) in
+
+    notify _q;
+    Some result
+    )
+  )
+
 
