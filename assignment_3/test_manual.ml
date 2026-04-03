@@ -21,6 +21,18 @@ let assert_bool_eq expected actual msg =
     printf "FAIL: %s\n  expected: %b\n  got: %b\n" msg expected actual;
     exit 1
   end
+
+let assert_raises_invalid_arg f msg =
+  try
+    ignore (f ());
+    printf "FAIL: %s\n  expected Invalid_argument exception, but none was raised.\n" msg;
+    exit 1
+  with
+  | Invalid_argument _ -> () (* Test passed! *)
+  | e -> 
+      printf "FAIL: %s\n  expected Invalid_argument, but got %s\n" msg (Printexc.to_string e);
+      exit 1
+
 (* Test create, enq, deq, size, capacity in a single thread. *)
 let test_sequential_basic () = 
   printf "Running test_sequential_basic...\n";
@@ -64,7 +76,30 @@ let test_sequential_basic () =
   printf "PASSED\n"
 
 (** Test that invalid arguments raise [Invalid_argument]. *)
-let test_error_handling () = failwith "TODO: implement"
+let test_error_handling () =
+  printf "Running test_error_handling...\n";
+  
+  (* 1. Test create bounds *)
+  assert_raises_invalid_arg (fun () -> BatchQueue.create 0) "create with capacity zero";
+  assert_raises_invalid_arg (fun () -> BatchQueue.create (-5)) "create with negative capacity";
+  
+  let q = BatchQueue.create 5 in
+  
+  assert_raises_invalid_arg (fun () -> BatchQueue.enq q [||]) "enq empty array";
+  assert_raises_invalid_arg (fun () -> BatchQueue.enq q [|1; 2; 3; 4; 5; 6|]) "enq items greater than capacity";
+  
+  assert_raises_invalid_arg (fun () -> BatchQueue.deq q 0) "deq zero items";
+  assert_raises_invalid_arg (fun () -> BatchQueue.deq q (-1)) "deq negative items";
+  assert_raises_invalid_arg (fun () -> BatchQueue.deq q 6) "deq items greater than capacity";
+  
+  assert_raises_invalid_arg (fun () -> BatchQueue.try_enq q [||]) "try_enq empty array";
+  assert_raises_invalid_arg (fun () -> BatchQueue.try_enq q [|1; 2; 3; 4; 5; 6|]) "try_enq items greater than capacity";
+  
+  assert_raises_invalid_arg (fun () -> BatchQueue.try_deq q 0) "try_deq zero items";
+  assert_raises_invalid_arg (fun () -> BatchQueue.try_deq q (-1)) "try_deq negative items";
+  assert_raises_invalid_arg (fun () -> BatchQueue.try_deq q 6) "try_deq items greater than capacity";
+  
+  printf "PASSED\n"
 
 (** Test that deq blocks until items arrive (and/or enq blocks until space frees). *)
 let test_blocking_enq_deq () = failwith "TODO: implement"
