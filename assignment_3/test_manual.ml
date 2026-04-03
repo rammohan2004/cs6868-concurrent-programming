@@ -143,7 +143,46 @@ let test_blocking_enq_deq () =
       deq_blocked_correctly enq_blocked_correctly final_size
 
 (** Test that a single producer/consumer pair sees items in FIFO order. *)
-let test_fifo_single_producer_consumer () = failwith "TODO: implement"
+let test_fifo_single_producer_consumer () = 
+  printf "Running test_fifo_single_producer_consumer...\n%!";
+  let q = BatchQueue.create 10 in
+  let total_items = 100 in
+  let passed = Atomic.make true in
+
+  let producer () =
+    let i = ref 1 in
+    while !i <= total_items do
+      let batch_size = min 3 (total_items - !i + 1) in
+      let arr = Array.init batch_size (fun j -> !i + j) in
+      BatchQueue.enq q arr;
+      i := !i + batch_size
+    done
+  in
+
+  let consumer () =
+    let expected = ref 1 in
+    while !expected <= total_items do
+      let batch_size = min 4 (total_items - !expected + 1) in
+      let arr = BatchQueue.deq q batch_size in
+      for j = 0 to Array.length arr - 1 do
+        if arr.(j) <> !expected then Atomic.set passed false;
+        expected := !expected + 1
+      done
+    done
+  in
+
+  let p = Domain.spawn producer in
+  let c = Domain.spawn consumer in
+
+  Domain.join p;
+  Domain.join c;
+
+  if Atomic.get passed && BatchQueue.size q = 0 then
+    Printf.printf " ✓ Passed : FIFO order maintained.\n%!"
+  else begin
+    Printf.printf " ✗ FAILED : Items received out of order or queue not empty.\n%!";
+    exit 1
+  end
 
 (** Test dequeuer head-of-line blocking: deq(5) arrives before deq(2);
     even when 6 items are enqueued, deq(5) must be served first. *)
@@ -166,7 +205,8 @@ let () =
   test_sequential_basic ();
   test_error_handling ();
   test_blocking_enq_deq ();
-  (*test_fifo_single_producer_consumer ();
+  test_fifo_single_producer_consumer ();
+  (*
   test_dequeuer_head_of_line_blocking ();
   test_enqueuer_head_of_line_blocking ();
   test_no_lost_items ();
