@@ -140,7 +140,8 @@ let test_blocking_enq_deq () =
     printf " ✓ Passed : deq and enq blocked correctly. Final size: %d\n%!" final_size
   else 
     printf " ✗ FAILED : Blocking logic failed (deq blocked: %b, enq blocked: %b, final size: %d)\n%!" 
-      deq_blocked_correctly enq_blocked_correctly final_size
+      deq_blocked_correctly enq_blocked_correctly final_size;
+      exit 1
 
 (** Test that a single producer/consumer pair sees items in FIFO order. *)
 let test_fifo_single_producer_consumer () = 
@@ -186,7 +187,53 @@ let test_fifo_single_producer_consumer () =
 
 (** Test dequeuer head-of-line blocking: deq(5) arrives before deq(2);
     even when 6 items are enqueued, deq(5) must be served first. *)
-let test_dequeuer_head_of_line_blocking () = failwith "TODO: implement"
+let test_dequeuer_head_of_line_blocking () = 
+  printf "Running test_dequeuer_head_of_line_blocking...\n%!";
+  let q = BatchQueue.create 10 in
+
+  let d1_completed = Atomic.make false in
+  let d2_completed = Atomic.make false in
+
+  let d1 = Domain.spawn (fun () ->
+    let res = BatchQueue.deq q 5 in
+    assert_array_eq [|1; 2; 3; 4; 5|] res "d1 gets first 5";
+    Atomic.set d1_completed true
+  ) in
+
+  Unix.sleepf 0.1; 
+
+  let d2 = Domain.spawn (fun () ->
+    let res = BatchQueue.deq q 2 in
+    assert_array_eq [|6; 7|] res "d2 gets next 2";
+    Atomic.set d2_completed true
+  ) in
+
+  Unix.sleepf 0.1;
+
+  BatchQueue.enq q [|1; 2; 3|];
+  Unix.sleepf 0.1;
+
+  let d1_blocked_step1 = not (Atomic.get d1_completed) in
+  let d2_blocked_step1 = not (Atomic.get d2_completed) in 
+
+  BatchQueue.enq q [|4; 5; 6|];
+  Unix.sleepf 0.1;
+
+  let d1_finished_step2 = Atomic.get d1_completed in
+  let d2_blocked_step2 = not (Atomic.get d2_completed) in
+
+  BatchQueue.enq q [|7|];
+  Domain.join d1;
+  Domain.join d2;
+
+  let d2_finished_final = Atomic.get d2_completed in
+
+  if d1_blocked_step1 && d2_blocked_step1 && d1_finished_step2 && d2_blocked_step2 && d2_finished_final then
+    printf " ✓ Passed : Head-of-line blocking satisfied.\n%!"
+  else begin
+    printf " ✗ FAILED : Head-of-line blocking violated.\n";
+    exit 1
+  end
 
 (** Test enqueuer head-of-line blocking: enq(3) arrives before enq(1);
     freeing 1 slot must NOT let enq(1) jump ahead. *)
@@ -206,8 +253,8 @@ let () =
   test_error_handling ();
   test_blocking_enq_deq ();
   test_fifo_single_producer_consumer ();
-  (*
   test_dequeuer_head_of_line_blocking ();
+  (*
   test_enqueuer_head_of_line_blocking ();
   test_no_lost_items ();
   test_batch_atomicity ();
