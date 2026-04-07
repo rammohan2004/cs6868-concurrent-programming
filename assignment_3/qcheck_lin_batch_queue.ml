@@ -35,7 +35,24 @@ module BatchQueueSig = struct
   open Lin
   let int_small = nat_small
   let _ = (t, int_small)
-  let api = failwith "TODO: define wrapper functions and api list (see README Part 3)"
+
+  let try_enq1 q v1 = BQ.try_enq q [|v1|]
+  let try_enq2 q v1 v2 = BQ.try_enq q [|v1; v2|]
+  let try_enq3 q v1 v2 v3 = BQ.try_enq q [|v1; v2; v3|]
+
+  let try_deq1 q = BQ.try_deq q 1
+  let try_deq2 q = BQ.try_deq q 2
+  let try_deq3 q = BQ.try_deq q 3
+
+  let api = [ 
+      val_ "try_enq1" try_enq1 (t @-> int_small @-> returning bool);
+      val_ "try_enq2" try_enq2 (t @-> int_small @-> int_small @-> returning bool);
+      val_ "try_enq3" try_enq3 (t @-> int_small @-> int_small @-> int_small @-> returning bool);
+      
+      val_ "try_deq1" try_deq1 (t @-> returning (option (array int_small)));
+      val_ "try_deq2" try_deq2 (t @-> returning (option (array int_small)));
+      val_ "try_deq3" try_deq3 (t @-> returning (option (array int_small)));
+    ]
 end
 
 (** Generate the linearizability test from the specification *)
