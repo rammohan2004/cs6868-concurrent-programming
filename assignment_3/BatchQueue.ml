@@ -56,7 +56,11 @@ let validate_deq_count q n =
 
 let free_space q = q.capacity - Queue.length q.buffer
 
-let size _q = Queue.length _q.buffer
+let size _q = 
+  Mutex.lock _q.mutex;
+  Fun.protect ~finally:(fun () -> Mutex.unlock _q.mutex) (fun () ->
+    Queue.length _q.buffer
+  )
 
 let capacity _q = _q.capacity
 
@@ -92,9 +96,8 @@ let enq _q _items =
   validate_enq_count _q items_size;
   Mutex.lock _q.mutex;
   Fun.protect ~finally:(fun () -> Mutex.unlock _q.mutex) (fun () ->
-    let freespace = free_space _q in
 
-    if(Queue.length _q.enq_waiters > 0 || freespace < items_size ) then (
+    if(Queue.length _q.enq_waiters > 0 || free_space _q < items_size ) then (
       let waiter = {items = _items; cond = Condition.create ()} in
       Queue.add waiter _q.enq_waiters;
 
@@ -122,11 +125,11 @@ let deq _q _n =
   Mutex.lock _q.mutex;
   Fun.protect ~finally:(fun () -> Mutex.unlock _q.mutex) (fun () ->
 
-    if(Queue.length _q.deq_waiters > 0 ||  size _q < _n) then (
+    if(Queue.length _q.deq_waiters > 0 ||  Queue.length _q.buffer < _n) then (
       let waiter = {amount = _n; cond = Condition.create ()} in
       Queue.add waiter _q.deq_waiters;
 
-      while (size _q < _n || Queue.peek _q.deq_waiters != waiter) do
+      while (Queue.length _q.buffer < _n || Queue.peek _q.deq_waiters != waiter) do
         Condition.wait waiter.cond _q.mutex
       done;
 
@@ -150,18 +153,15 @@ let try_enq _q _items =
   Mutex.lock _q.mutex;
   Fun.protect ~finally:(fun () -> Mutex.unlock _q.mutex) (fun () ->
 
-    let freespace = free_space _q in
-
-    if (Queue.length _q.enq_waiters > 0 || freespace < items_size ) then 
+    if (Queue.length _q.enq_waiters > 0 || free_space _q < items_size ) then 
       false
     else (
 
-    for i = 0 to items_size-1 do
-      Queue.add _items.(i) _q.buffer
-    done;
-
-    notify _q;
-    true
+      for i = 0 to items_size-1 do
+        Queue.add _items.(i) _q.buffer
+      done;
+      notify _q;
+      true
     )
   )
 
@@ -174,16 +174,13 @@ let try_deq _q _n =
   Mutex.lock _q.mutex;
   Fun.protect ~finally:(fun () -> Mutex.unlock _q.mutex) (fun () ->
 
-    if(Queue.length _q.deq_waiters > 0 ||  size _q < _n) then (
+    if(Queue.length _q.deq_waiters > 0 ||  Queue.length _q.buffer < _n) then (
       None 
     ) else (
 
-    let result = Array.init _n (fun _ ->Queue.take _q.buffer) in
-
-    notify _q;
-    Some result
-    
+      let result = Array.init _n (fun _ ->Queue.take _q.buffer) in
+      notify _q;
+      Some result
+      
     )
   )
-
-

@@ -72,7 +72,30 @@ let arb_cmd _state =
    - For Size and Capacity: queries don't change state.
    ============================================================================ *)
 let next_state cmd state =
-  let _ = (cmd, state) in failwith "TODO: Implement next_state"
+  match cmd with
+  | Try_enq items ->
+      if List.length state + Array.length items <= queue_capacity then
+        state @ (Array.to_list items) 
+      else
+        state 
+        
+  | Try_deq n ->
+      if List.length state >= n then
+        let rec drop k lst =
+          match k, lst with
+          | 0, _ -> lst
+          | _, [] -> []
+          | k, _ :: t -> drop (k - 1) t
+        in
+        drop n state
+      else
+        state
+        
+  | Size -> 
+      state
+      
+  | Capacity -> 
+      state
 
 let precond _cmd _state = true
 
@@ -108,7 +131,32 @@ let run cmd sut =
      | ...
    ============================================================================ *)
 let postcond cmd state result =
-  let _ = (cmd, state, result) in failwith "TODO: Implement postcond"
+  match cmd, result with
+  | Try_enq items, Res ((Bool, _), actual_res) ->
+      let condition = List.length state + Array.length items <= queue_capacity in
+      actual_res = condition
+
+  | Try_deq n, Res ((Option (Array Int), _), actual_res) ->
+      if List.length state >= n then
+        let rec take k lst =
+          match k, lst with
+          | 0, _ -> []
+          | _, [] -> []
+          | k, h :: t -> h :: take (k - 1) t
+        in
+        let items = take n state in
+        let expected_arr = Array.of_list (items : int list) in
+        actual_res = Some expected_arr
+      else
+        actual_res = None
+
+  | Size, Res ((Int, _), actual_size) ->
+      actual_size = List.length state
+
+  | Capacity, Res ((Int, _), actual_capacity) ->
+      actual_capacity = queue_capacity
+
+  | _, _ -> false
 
 module Spec = struct
   type sut = int BQ.t
