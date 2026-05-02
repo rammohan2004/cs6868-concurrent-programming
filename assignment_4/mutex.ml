@@ -74,12 +74,10 @@ let lock_evt m = Select.Evt {
     else 
      None
     );
-    offer = ( fun slot trigger ->
-      if try_lock m then
-        assert false
-      else 
-        Queue.push (slot, trigger) m.waiters
+    offer = (fun slot trigger ->
+      Queue.push (slot, trigger) m.waiters
     );
+
     wrap = Fun.id;
 }
 
