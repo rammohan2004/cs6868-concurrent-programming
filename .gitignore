@@ -33,3 +33,27 @@ autograder/*.txt
 _build
 
 TSAN_REPORT
+
+
+_build/
+
+
+.merlin
+
+
+*.exe
+*.cmo
+*.cmi
+*.cma
+*.cmx
+*.o
+*.aux
+*.bbl
+*.fdb_latexmk
+*.fls
+*.out
+*.blg
+*.log
+
+
+.DS_Store
